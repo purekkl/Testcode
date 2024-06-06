@@ -49,7 +49,7 @@ station_select = driver.find_element(By.NAME, "STNM")
 station_select.clear()
 station_select.send_keys("48453")
 station_select.send_keys(Keys.RETURN)
-time.sleep(8)
+time.sleep(1)
 
 """change to new window and write list of unstuctured data"""
 
