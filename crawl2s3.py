@@ -16,10 +16,7 @@ import boto3
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 file_name1 = f'dw_{timestamp}.csv'
 file_name2 = f'best_{timestamp}.csv'
-# aws_access_key_id = 'AKIA2UC26TBOZGJC2OCA'
-# aws_secret_access_key = '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'
 bucket_name = 'airflowytbucket'
-# Initialize Boto3 S3 client
 s3_client = boto3.client(
     's3'
 )
