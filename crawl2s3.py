@@ -4,12 +4,26 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from datetime import datetime, timedelta
 import time
 import requests
 from bs4 import BeautifulSoup
 import csv
 import pandas as pd
+import s3fs
+import boto3
 """crawling data from website"""
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+file_name1 = f'dw_{timestamp}.csv'
+file_name2 = f'best_{timestamp}.csv'
+# aws_access_key_id = 'AKIA2UC26TBOZGJC2OCA'
+# aws_secret_access_key = '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'
+bucket_name = 'airflowytbucket'
+# Initialize Boto3 S3 client
+s3_client = boto3.client(
+    's3'
+)
+
 def selectdrop(nameele):
     WebDriverWait(driver, 10).until(
     EC.presence_of_element_located((By.NAME, f"{nameele}"))
@@ -40,8 +54,7 @@ station_select = driver.find_element(By.NAME, "STNM")
 station_select.clear()
 station_select.send_keys("48453")
 station_select.send_keys(Keys.RETURN)
-
-time.sleep(1)
+time.sleep(8)
 
 """change to new window and write list of unstuctured data"""
 
@@ -56,19 +69,21 @@ soup = BeautifulSoup(response.content, 'html.parser')
 pre_tag = soup.find("pre")
 if pre_tag:
     data_text = pre_tag.text
-with open("downloaded_data.csv", "w") as file:
-    file.write(data_text)
+s3_client.put_object(Bucket=bucket_name, Key=file_name1,Body=data_text)
 driver.quit()
+"""write to csv"""
 
-"""using pandas to restructure data and save to csv file"""
+# Download the file from S3
+data = s3_client.get_object(Bucket=bucket_name, Key=file_name1)
+csv_content = data['Body'].read().decode('utf-8')
 
-df = pd.read_csv('downloaded_data.csv', header=None,skiprows=2).drop(index=[2]).reset_index(drop=True)
-df = df.to_string(index=False).split('\n')
+df = csv_content.split('\n')
+df = pd.Series(df).drop(index=[0,1,4]).reset_index(drop=True)
+df = df.tolist()
 
 for i in range(len(df)):
     df[i] = df[i].replace('       ', ' NaN ')
-df = df[1:]
 df = pd.DataFrame([x.split() for x in df])
 df.columns = [f"{col} ({unit})" for col, unit in zip(df.iloc[0], df.iloc[1])]
 df = df.iloc[2:].copy()
-df.to_csv('best.csv', index=False)
+df.to_csv(f's3://airflowytbucket/{file_name2}', index=False)
