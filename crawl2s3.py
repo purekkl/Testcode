@@ -17,9 +17,7 @@ timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 file_name1 = f'dw_{timestamp}.csv'
 file_name2 = f'best_{timestamp}.csv'
 bucket_name = 'airflowytbucket'
-s3_client = boto3.client(
-    's3'
-)
+s3_client = boto3.client('s3')
 
 def selectdrop(nameele):
     WebDriverWait(driver, 10).until(
